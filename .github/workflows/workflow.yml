@@ -1,0 +1,40 @@
+name: Main workflow
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Download cygwin
+        shell: powershell
+        run: |
+          & cmd /c 'nslookup www.cygwin.com 2>&1'
+          while ($true)
+          {
+              try
+              {
+                  (New-Object Net.WebClient).DownloadFile('http://www.cygwin.com/setup-x86_64.exe', 'setup-x86_64.exe')
+                  break
+              }
+              catch
+              {
+                  Write-Host "There is an error during package downloading:`n $_"
+              }
+          }
+          & cmd /c 'nslookup www.cygwin.com 8.8.8.8 2>&1'
+
+      - name: Install cygwin and rsync
+        shell: cmd
+        run: |
+          @ECHO ON
+          SET CYGWIN_ROOT=c:\cygwin
+          setup-x86_64.exe --quiet-mode --root %CYGWIN_ROOT% --site http://cygwin.mirror.constant.com --packages rsync
+
+      - name: Check rsync version
+        shell: cmd
+        run: |
+          C:\cygwin\bin\bash -l -c 'rsync --version'
